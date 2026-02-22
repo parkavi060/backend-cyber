@@ -2,8 +2,8 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from bson import ObjectId
-from app.utils.risk_engine import calculate_risk_score, detect_threat_type
-from app.utils.response_playbook import PLAYBOOK
+from app.services.risk_engine import calculate_risk_score, detect_threat_type
+from app.constants.incident_constants import PLAYBOOK, IncidentMessages
 from app.utils.security import generate_sha256
 
 incident_bp = Blueprint("incident", __name__)
@@ -20,7 +20,7 @@ def report_incident():
     files = request.files.getlist("files")
 
     if not data:
-        return jsonify({"msg": "Invalid request body"}), 400
+        return jsonify({"msg": IncidentMessages.INVALID_REQUEST}), 400
 
     # 📥 Extract fields from new form
     platform = data.get("platform")
@@ -32,10 +32,10 @@ def report_incident():
 
     # ✅ Validate required fields
     if not platform or not incident_date or not narrative:
-        return jsonify({"msg": "Required fields missing"}), 400
+        return jsonify({"msg": IncidentMessages.REQUIRED_FIELDS_MISSING}), 400
 
     if not confirmation:
-        return jsonify({"msg": "You must confirm the report"}), 400
+        return jsonify({"msg": IncidentMessages.CONFIRMATION_REQUIRED}), 400
 
     # 🔎 Combine text for analysis
     combined_text = narrative + " " + ioc_indicators
@@ -114,7 +114,7 @@ def report_incident():
     db.incidents.insert_one(incident)
 
     return jsonify({
-        "msg": "Incident reported successfully",
+        "msg": IncidentMessages.REPORT_SUCCESS,
         "risk_level": risk_level,
         "threat_type": threat_type,
         "immediate_actions": guidance["immediate"],
@@ -148,13 +148,13 @@ def get_incident_analysis(incident_id):
     try:
         incident = db.incidents.find_one({"_id": ObjectId(incident_id)})
     except:
-        return jsonify({"msg": "Invalid incident ID"}), 400
+        return jsonify({"msg": IncidentMessages.INVALID_ID}), 400
 
     if not incident:
-        return jsonify({"msg": "Incident not found"}), 404
+        return jsonify({"msg": IncidentMessages.NOT_FOUND}), 404
 
     if incident.get("reported_by") != current_user:
-        return jsonify({"msg": "Unauthorized access"}), 403
+        return jsonify({"msg": IncidentMessages.UNAUTHORIZED}), 403
 
     analysis = {
         "riskScore": incident.get("risk_score", 0),
@@ -194,10 +194,10 @@ def verify_incident(incident_id):
     try:
         incident = db.incidents.find_one({"_id": ObjectId(incident_id)})
     except:
-        return jsonify({"msg": "Invalid incident ID"}), 400
+        return jsonify({"msg": IncidentMessages.INVALID_ID}), 400
 
     if not incident:
-        return jsonify({"msg": "Incident not found"}), 404
+        return jsonify({"msg": IncidentMessages.NOT_FOUND}), 404
 
     combined_data = (
         incident.get("platform", "") +

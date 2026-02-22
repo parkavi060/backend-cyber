@@ -1,5 +1,25 @@
-PLAYBOOK = {
+class IncidentMessages:
+    INVALID_REQUEST = "Invalid request body"
+    REQUIRED_FIELDS_MISSING = "Required fields missing"
+    CONFIRMATION_REQUIRED = "You must confirm the report"
+    REPORT_SUCCESS = "Incident reported successfully"
+    INVALID_ID = "Invalid incident ID"
+    NOT_FOUND = "Incident not found"
+    UNAUTHORIZED = "Unauthorized access"
 
+class AdminMessages:
+    STAFF_ONLY = "Staff only"
+    ADMIN_ONLY = "Admins only"
+    NOT_FOUND = "Not found"
+    INVALID_ID = "Invalid ID"
+    STATUS_REQUIRED = "Status required"
+    REVIEW_STARTED = "Review started"
+    REVIEW_SUCCESS = "Incident reviewed successfully"
+    STATUS_UPDATED = "Status updated"
+    INCIDENT_CREATED = "Incident created"
+    INCIDENT_DELETED = "Incident deleted"
+
+PLAYBOOK = {
     "Malicious Link": {
         "immediate": [
             "Do NOT click the link again",
@@ -12,7 +32,6 @@ PLAYBOOK = {
             "Keep antivirus updated"
         ]
     },
-
     "Credential Theft": {
         "immediate": [
             "Change all passwords immediately",
@@ -25,7 +44,6 @@ PLAYBOOK = {
             "Avoid logging into unknown sites"
         ]
     },
-
     "Social Engineering": {
         "immediate": [
             "Do not respond to the sender",
@@ -37,7 +55,6 @@ PLAYBOOK = {
             "Verify identity before sharing information"
         ]
     },
-
     "Suspicious Message": {
         "immediate": [
             "Do not interact with the message",

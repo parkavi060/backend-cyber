@@ -1,4 +1,4 @@
-from .nlp_analyzer import vader_risk_score   # ✅ ADD THIS IMPORT
+from .ai_analysis import vader_risk_score   # ✅ UPDATED IMPORT
 
 def calculate_risk_score(title: str, description: str, evidence: str):
     score = 0

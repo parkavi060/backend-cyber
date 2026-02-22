@@ -25,7 +25,7 @@ def is_malicious(url):
     }
 
     response = requests.post(endpoint, json=payload)
-    print(response.json()) 
+    current_app.logger.debug(f"Safe Browsing API response: {response.json()}") 
     result = response.json()
 
     return "matches" in result

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.constants.auth_constants import AuthMessages, AuthRoles
-from app.utils.auth_helper import authenticate_user, get_user_profile
+from app.services.auth_service import authenticate_user, get_user_profile
 
 auth_bp = Blueprint("auth", __name__)
 
