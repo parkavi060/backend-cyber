@@ -12,21 +12,21 @@ def register():
     db = current_app.db
     data = request.get_json()
 
-    username = data.get("username")
+    serviceId = data.get("serviceId")
     password = data.get("password")
 
-    if not username:
+    if not serviceId:
         return jsonify({"msg": AuthMessages.USERNAME_REQUIRED}), 400
     if not password:
         return jsonify({"msg": AuthMessages.PASSWORD_REQUIRED}), 400
 
-    if db.users.find_one({"username": username}):
+    if db.users.find_one({"username": serviceId}):
         return jsonify({"msg": AuthMessages.USER_ALREADY_EXISTS}), 409
 
     hashed = generate_password_hash(password)
 
     db.users.insert_one({
-        "username": username,
+        "username": serviceId,
         "password": hashed,
         "role": AuthRoles.USER   
     })

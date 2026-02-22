@@ -16,7 +16,8 @@ def report_incident():
 
     db = current_app.db
     current_user = get_jwt_identity()
-    data = request.get_json()
+    data = request.form if request.form else request.get_json()
+    files = request.files.getlist("files")
 
     if not data:
         return jsonify({"msg": "Invalid request body"}), 400
