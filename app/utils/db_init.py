@@ -15,6 +15,14 @@ def init_db_indexes(db, logger):
         db.incidents.create_index([("created_at", DESCENDING)])
         db.incidents.create_index([("analyst_reviewed", ASCENDING)])
         
+        # Audit Logs Indexes
+        db.audit_logs.create_index([("timestamp", DESCENDING)])
+        db.audit_logs.create_index([("actor", ASCENDING)])
+        db.audit_logs.create_index([("event_type", ASCENDING)])
+        
+        # Request Logs Indexes
+        db.request_logs.create_index([("timestamp", DESCENDING)])
+        
         logger.info("MongoDB indexes initialized successfully.")
         return True
     except Exception as e:

@@ -6,10 +6,14 @@ class IncidentMessages:
     INVALID_ID = "Invalid incident ID"
     NOT_FOUND = "Incident not found"
     UNAUTHORIZED = "Unauthorized access"
+    INTEGRITY_VALID = "Evidence integrity verified (SHA-256 + MD5)"
+    INTEGRITY_TAMPERED = "Evidence integrity FAILED — tampering detected"
 
 class AdminMessages:
     STAFF_ONLY = "Staff only"
     ADMIN_ONLY = "Admins only"
+    CERT_OR_ADMIN_ONLY = "CERT Analysts or Admins only"
+    INSUFFICIENT_PERMISSIONS = "Insufficient permissions"
     NOT_FOUND = "Not found"
     INVALID_ID = "Invalid ID"
     STATUS_REQUIRED = "Status required"

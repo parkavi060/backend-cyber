@@ -1,4 +1,5 @@
 from flask import Flask
+import time
 from app.config import Config
 from app.extensions import jwt
 import nltk
@@ -10,21 +11,18 @@ from flask_cors import CORS
 from app.utils.logger import setup_logger
 from app.utils.error_handler import register_error_handlers
 from app.utils.db_init import init_db_indexes
+from app.helpers.request_logger import setup_request_logging
 
 def create_app():
 
     app = Flask(__name__)
+    app.start_time = time.time()  # Track uptime
     CORS(app) # Allow cross-origin requests
     app.config.from_object(Config)
 
-    # ✅ Download NLTK data
-    try:
-        nltk.download('vader_lexicon', quiet=True)
-    except Exception as e:
-        app.logger.warning(f"Failed to download NLTK data: {e}")
-    
-    # ✅ Setup Logging & Error Handling
+    # ✅ Setup Logging, Middleware & Error Handling
     setup_logger(app)
+    setup_request_logging(app)
     register_error_handlers(app)
     
     app.register_blueprint(admin_bp, url_prefix="/api/admin")

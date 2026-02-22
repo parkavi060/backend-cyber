@@ -3,6 +3,8 @@ from werkzeug.security import generate_password_hash
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.constants.auth_constants import AuthMessages, AuthRoles
 from app.services.auth_service import authenticate_user, get_user_profile
+from app.services.audit_service import log_activity
+from app.constants.audit_constants import AuditEvents
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -14,11 +16,14 @@ def register():
 
     serviceId = data.get("serviceId")
     password = data.get("password")
+    role = data.get("role", AuthRoles.USER)
 
     if not serviceId:
         return jsonify({"msg": AuthMessages.USERNAME_REQUIRED}), 400
     if not password:
         return jsonify({"msg": AuthMessages.PASSWORD_REQUIRED}), 400
+    if role not in AuthRoles.VALID_ROLES:
+        return jsonify({"msg": AuthMessages.INVALID_ROLE}), 400
 
     if db.users.find_one({"username": serviceId}):
         return jsonify({"msg": AuthMessages.USER_ALREADY_EXISTS}), 409
@@ -28,8 +33,15 @@ def register():
     db.users.insert_one({
         "username": serviceId,
         "password": hashed,
-        "role": AuthRoles.USER   
+        "role": role
     })
+
+    log_activity(
+        actor=serviceId,
+        event_type=AuditEvents.USER_REGISTER,
+        details={"role": role},
+        role=role
+    )
 
     return jsonify({"msg": AuthMessages.REGISTER_SUCCESS}), 201
 
@@ -56,8 +68,13 @@ def me():
 @auth_bp.route("/logout", methods=["POST"])
 @jwt_required()
 def logout():
-    # In a simple JWT setup, logout is often handled on the client side by discarding the token.
-    # However, we can return a success message or implement a blacklist if needed.
+    user = get_jwt_identity()
+    
+    log_activity(
+        actor=user,
+        event_type=AuditEvents.USER_LOGOUT
+    )
+    
     return jsonify({"msg": AuthMessages.LOGOUT_SUCCESS}), 200
 
 

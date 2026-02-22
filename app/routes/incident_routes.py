@@ -4,7 +4,9 @@ from datetime import datetime
 from bson import ObjectId
 from app.services.risk_engine import calculate_risk_score, detect_threat_type
 from app.constants.incident_constants import PLAYBOOK, IncidentMessages
-from app.utils.security import generate_sha256
+from app.utils.security import generate_evidence_hashes, build_evidence_string, verify_evidence_integrity
+from app.services.audit_service import log_activity
+from app.constants.audit_constants import AuditEvents
 
 incident_bp = Blueprint("incident", __name__)
 
@@ -57,9 +59,9 @@ def report_incident():
     # 📘 Safety guidance
     guidance = PLAYBOOK.get(threat_type, PLAYBOOK["Suspicious Message"])
 
-    # 🔐 Evidence integrity hash
-    combined_data = platform + incident_date + narrative + ioc_indicators
-    evidence_hash = generate_sha256(combined_data)
+    # 🔐 Evidence integrity hash (Hybrid: SHA-256 + MD5)
+    combined_data = build_evidence_string(platform, incident_date, narrative, ioc_indicators)
+    hashes = generate_evidence_hashes(combined_data)
 
     incident = {
         # metadata
@@ -91,7 +93,8 @@ def report_incident():
         "analyst_reviewed": False,
 
         # integrity
-        "evidence_hash": evidence_hash,
+        "evidence_hash": hashes["sha256"],
+        "evidence_hash_md5": hashes["md5"],
 
         # analyst review fields
         "analyst_name": None,
@@ -112,6 +115,12 @@ def report_incident():
     }
 
     db.incidents.insert_one(incident)
+
+    log_activity(
+        actor=current_user,
+        event_type=AuditEvents.INCIDENT_REPORTED,
+        details={"platform": platform, "risk_level": risk_level}
+    )
 
     return jsonify({
         "msg": IncidentMessages.REPORT_SUCCESS,
@@ -185,7 +194,7 @@ def get_incident_analysis(incident_id):
     return jsonify(analysis), 200
 
 
-#✅ VERIFY INTEGRITY (UPDATED)
+#✅ VERIFY INTEGRITY (Hybrid: SHA-256 + MD5)
 @incident_bp.route("/verify/<incident_id>", methods=["GET"])
 @jwt_required()
 def verify_incident(incident_id):
@@ -199,18 +208,9 @@ def verify_incident(incident_id):
     if not incident:
         return jsonify({"msg": IncidentMessages.NOT_FOUND}), 404
 
-    combined_data = (
-        incident.get("platform", "") +
-        incident.get("incident_date", "") +
-        incident.get("narrative", "") +
-        incident.get("ioc_indicators", "")
-    )
-
-    new_hash = generate_sha256(combined_data)
-
-    integrity_status = "valid" if new_hash == incident.get("evidence_hash") else "tampered"
+    result = verify_evidence_integrity(incident)
 
     return jsonify({
         "incident_id": incident_id,
-        "integrity": integrity_status
+        **result
     }), 200

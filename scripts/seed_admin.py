@@ -29,9 +29,15 @@ def seed_admin():
         print("\nSelect Role:")
         print("1. Admin")
         print("2. Analyst")
-        role_choice = input("Choice (1/2): ").strip()
+        print("3. CERT Analyst")
+        role_choice = input("Choice (1/2/3): ").strip()
         
-        role = "admin" if role_choice == "1" else "analyst"
+        if role_choice == "1":
+            role = "admin"
+        elif role_choice == "2":
+            role = "analyst"
+        else:
+            role = "cert_analyst"
 
         if not username or not password:
             print("❌ Error: Username and password are required")

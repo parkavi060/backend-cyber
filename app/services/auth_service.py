@@ -2,6 +2,8 @@ from flask import current_app
 from werkzeug.security import check_password_hash
 from flask_jwt_extended import create_access_token
 from app.constants.auth_constants import AuthMessages, AuthRoles
+from app.services.audit_service import log_activity
+from app.constants.audit_constants import AuditEvents
 
 def authenticate_user(serviceId, password, affiliation):
     """
@@ -17,6 +19,7 @@ def authenticate_user(serviceId, password, affiliation):
     user = db.users.find_one({ "username": serviceId })
 
     if not user:
+        log_activity(actor=serviceId or "unknown", event_type=AuditEvents.LOGIN_FAILED, details={"reason": "User not found"})
         return {"msg": AuthMessages.INVALID_CREDENTIALS}, 401
 
     # Validate based on role
@@ -27,7 +30,8 @@ def authenticate_user(serviceId, password, affiliation):
         expected_affiliation = "Service Personnel" if affiliation == "Service Personnel" else "family"
     
     # If the user exists and the password matches, we proceed
-    if not user or not check_password_hash(user["password"], password):
+    if not check_password_hash(user["password"], password):
+        log_activity(actor=serviceId, event_type=AuditEvents.LOGIN_FAILED, details={"reason": "Incorrect password"})
         return {"msg": AuthMessages.INVALID_CREDENTIALS}, 401
 
     role = user.get("role", AuthRoles.USER)
@@ -36,6 +40,8 @@ def authenticate_user(serviceId, password, affiliation):
         identity=user["username"],
         additional_claims={"role": role}
     )
+
+    log_activity(actor=serviceId, event_type=AuditEvents.USER_LOGIN, role=role)
 
     return {
         "token": token, 

@@ -16,6 +16,7 @@ class IncidentModel:
     - risk_level: low | medium | high
     - threat_type: Classified threat type
     - evidence_hash: SHA256 integrity hash
+    - evidence_hash_md5: MD5 integrity hash (hybrid verification)
     - status: open | in_progress | closed
     """
     COLLECTION = "incidents"
