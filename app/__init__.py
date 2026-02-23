@@ -20,6 +20,12 @@ def create_app():
     CORS(app) # Allow cross-origin requests
     app.config.from_object(Config)
 
+    # ✅ Download NLTK data
+    try:
+        nltk.download('vader_lexicon', quiet=True)
+    except Exception as e:
+        app.logger.warning(f"Failed to download NLTK data: {e}")
+
     # ✅ Setup Logging, Middleware & Error Handling
     setup_logger(app)
     setup_request_logging(app)

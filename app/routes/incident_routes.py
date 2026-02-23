@@ -3,10 +3,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from bson import ObjectId
 from app.services.risk_engine import calculate_risk_score, detect_threat_type
-from app.constants.incident_constants import PLAYBOOK, IncidentMessages
+from app.constants.incident_constants import PLAYBOOK, IncidentMessages, SUPPORTED_PLATFORMS
 from app.utils.security import generate_evidence_hashes, build_evidence_string, verify_evidence_integrity
 from app.services.audit_service import log_activity
 from app.constants.audit_constants import AuditEvents
+from app.services.ocr_service import extract_text_from_images
 
 incident_bp = Blueprint("incident", __name__)
 
@@ -28,6 +29,7 @@ def report_incident():
     platform = data.get("platform")
     incident_date = data.get("incident_date")
     relationship = data.get("relationship")
+    custom_platform = data.get("custom_platform")
     ioc_indicators = data.get("ioc_indicators", "")
     narrative = data.get("narrative", "")
     confirmation = data.get("confirmation", False)
@@ -39,12 +41,26 @@ def report_incident():
     if not confirmation:
         return jsonify({"msg": IncidentMessages.CONFIRMATION_REQUIRED}), 400
 
-    # 🔎 Combine text for analysis
-    combined_text = narrative + " " + ioc_indicators
+    # 🔄 Handle "Other" platform
+    final_platform = platform
+    if platform == "Other" and custom_platform:
+        final_platform = custom_platform
 
-    # 🤖 Risk scoring
+    # 🔍 OCR: Extract text from uploaded images
+    ocr_text = ""
+    ocr_results = []
+    if files:
+        ocr_text, ocr_results = extract_text_from_images(files)
+        current_app.logger.info(f"OCR extracted {len(ocr_text)} chars from {len(files)} file(s)")
+
+    # 🔎 Combine text for analysis (narrative + IOC + OCR extracted text)
+    combined_text = narrative + " " + ioc_indicators
+    if ocr_text:
+        combined_text += " " + ocr_text
+
+    # 🤖 Risk scoring (now includes OCR text)
     risk_score, risk_level, risk_reasons = calculate_risk_score(
-        combined_text, narrative, ioc_indicators
+        combined_text, narrative, ioc_indicators + " " + ocr_text
     )
 
     # 🌐 Detect URL presence
@@ -65,7 +81,7 @@ def report_incident():
 
     incident = {
         # metadata
-        "platform": platform,
+        "platform": final_platform,
         "incident_date": incident_date,
         "relationship": relationship,
 
@@ -104,6 +120,10 @@ def report_incident():
         "response_actions": [],
         "reviewed_at": None,
 
+        # OCR data
+        "ocr_extracted_text": ocr_text if ocr_text else None,
+        "ocr_results": ocr_results,
+
         # history
         "history": [
             {
@@ -119,7 +139,7 @@ def report_incident():
     log_activity(
         actor=current_user,
         event_type=AuditEvents.INCIDENT_REPORTED,
-        details={"platform": platform, "risk_level": risk_level}
+        details={"platform": final_platform, "risk_level": risk_level}
     )
 
     return jsonify({
@@ -128,6 +148,7 @@ def report_incident():
         "threat_type": threat_type,
         "immediate_actions": guidance["immediate"],
         "preventive_advice": guidance["preventive"],
+        "ocr_extracted_text": ocr_text if ocr_text else None,
         "note": "Automated safety guidance provided. Final verification will follow analyst review."
     }), 201
 
@@ -213,4 +234,11 @@ def verify_incident(incident_id):
     return jsonify({
         "incident_id": incident_id,
         **result
+    }), 200
+
+#✅ FETCH SUPPORTED PLATFORMS
+@incident_bp.route("/platforms", methods=["GET"])
+def get_supported_platforms():
+    return jsonify({
+        "platforms": SUPPORTED_PLATFORMS
     }), 200

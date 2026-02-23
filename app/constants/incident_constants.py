@@ -9,6 +9,20 @@ class IncidentMessages:
     INTEGRITY_VALID = "Evidence integrity verified (SHA-256 + MD5)"
     INTEGRITY_TAMPERED = "Evidence integrity FAILED — tampering detected"
 
+SUPPORTED_PLATFORMS = [
+    "WhatsApp",
+    "Facebook",
+    "Instagram",
+    "Twitter (X)",
+    "LinkedIn",
+    "Telegram",
+    "TikTok",
+    "Snapchat",
+    "Email",
+    "SMS",
+    "Other"
+]
+
 class AdminMessages:
     STAFF_ONLY = "Staff only"
     ADMIN_ONLY = "Admins only"
