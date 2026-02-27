@@ -81,5 +81,46 @@ PLAYBOOK = {
         "preventive": [
             "Stay cautious of unknown communications"
         ]
+    },
+    "Phishing": {
+        "immediate": [
+            "Do not enter any credentials",
+            "Change passwords if already entered",
+            "Report as phishing to the platform"
+        ],
+        "preventive": [
+            "Check sender email/URL carefully",
+            "Enable MFA",
+            "Use browser protection"
+        ]
+    },
+    "Malware": {
+        "immediate": [
+            "Disconnect from network",
+            "Run full system scan",
+            "Do not open any attachments"
+        ],
+        "preventive": [
+            "Keep software updated",
+            "Don't download from untrusted sources",
+            "Use reliable antivirus"
+        ]
     }
 }
+
+class ThreatTypes:
+    PHISHING = "Phishing"
+    MALWARE = "Malware"
+    MALICIOUS_LINK = "Malicious Link"
+    CREDENTIAL_THEFT = "Credential Theft"
+    SOCIAL_ENGINEERING = "Social Engineering"
+    SUSPICIOUS_MESSAGE = "Suspicious Message"
+
+THREAT_TYPES_LIST = [
+    ThreatTypes.PHISHING,
+    ThreatTypes.MALWARE,
+    ThreatTypes.MALICIOUS_LINK,
+    ThreatTypes.CREDENTIAL_THEFT,
+    ThreatTypes.SOCIAL_ENGINEERING,
+    ThreatTypes.SUSPICIOUS_MESSAGE
+]

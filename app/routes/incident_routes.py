@@ -63,14 +63,14 @@ def report_incident():
         combined_text, narrative, ioc_indicators + " " + ocr_text
     )
 
-    # 🌐 Detect URL presence
-    malicious_url_found = "http" in ioc_indicators.lower()
+    # 🌐 Detect URL presence (now includes OCR text)
+    malicious_url_found = "http" in (ioc_indicators + " " + ocr_text).lower()
 
     # urgency detection
     urgency_score = 15 if any(word in narrative.lower() for word in ["urgent", "immediately", "now"]) else 0
 
-    # 🧠 Threat type detection
-    threat_type = detect_threat_type(combined_text, malicious_url_found, urgency_score)
+    # 🧠 Threat type detection (now includes confidence)
+    threat_type, confidence = detect_threat_type(combined_text, malicious_url_found, urgency_score)
 
     # 📘 Safety guidance
     guidance = PLAYBOOK.get(threat_type, PLAYBOOK["Suspicious Message"])
@@ -101,6 +101,7 @@ def report_incident():
 
         # AI threat classification
         "threat_type_suggested": threat_type,
+        "classification_confidence": confidence,
         "immediate_actions": guidance["immediate"],
         "preventive_advice": guidance["preventive"],
 
@@ -146,10 +147,10 @@ def report_incident():
         "msg": IncidentMessages.REPORT_SUCCESS,
         "risk_level": risk_level,
         "threat_type": threat_type,
+        "confidence": confidence,
         "immediate_actions": guidance["immediate"],
         "preventive_advice": guidance["preventive"],
-        "ocr_extracted_text": ocr_text if ocr_text else None,
-        "note": "Automated safety guidance provided. Final verification will follow analyst review."
+        "note": "Automated ML threat classification provided. Final verification will follow analyst review."
     }), 201
 
 
